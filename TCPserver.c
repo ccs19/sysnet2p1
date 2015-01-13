@@ -4,7 +4,8 @@
 
 //For socket(), listen(), bind(), send(), recv(), accept(), getsockname()
 #include <sys/socket.h>
-
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 
 #include <sys/types.h>
@@ -44,6 +45,7 @@ char **h_addr_list;        list of addresses
 //TODO Implement in header eventually
 void CreateSocket();
 void DisplayInfo();
+void CloseSocket();
 
 
 
@@ -63,6 +65,7 @@ int main()
 {
     CreateSocket();
     DisplayInfo();
+    CloseSocket();
     return 0;
 }
 
@@ -72,7 +75,7 @@ void CreateSocket()
 {
     char hostname[HostNameMaxSize];
     listenSocket =  socket(AF_INET, SOCK_STREAM, 0);    //Attempt to open socket
-    if(listenSocket == -1) //If socket fails, exit
+    if(listenSocket == -1)                              //If socket fails, exit
     {
         printf("Error creating socket\n");
         exit(1);
@@ -83,19 +86,32 @@ void CreateSocket()
         exit(1);
     }
     HostByName = gethostbyname(hostname);
-
     if(HostByName ==  NULL)                             //If gethostbyname fails print error message, exit
     {
         herror("GetHostByName failed. Error: \n");
         exit(1);
     }
 
-    herror("Error printed for reference: ");            //Check value of errno. Remove this when no longer needed
+    herror("Error printed for reference: ");            //Check value of errno. TODO Remove this when no longer needed
 }
 
 
 void DisplayInfo()
 {
+    int i = 0;
+    struct in_addr ipAddress;
     printf("Host Name: %s\n",HostByName->h_name);
+    printf("IP:        ");
+    while(HostByName->h_addr_list[i] != 0)
+    {
+       ipAddress.s_addr = *(u_long*)HostByName->h_addr_list[i++];
+        printf("%s\n", inet_ntoa(ipAddress));
+    }
+    printf("Port:      %d\n");
+
+}
+
+void CloseSocket()
+{
 
 }

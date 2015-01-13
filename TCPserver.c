@@ -11,11 +11,13 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 
 
 //Globals
-int listenSocket = 0;
+int ListenSocket = 0;
 struct hostent *HostByName = NULL;
+struct sockaddr_in *SocketAddress = NULL;
 
 //Constants
 const int HostNameMaxSize = 256;
@@ -43,10 +45,12 @@ char **h_addr_list;        list of addresses
 
 //Prototypes.
 //TODO Implement in header eventually
-void CreateSocket();
+void OpenSocket();
 void DisplayInfo();
 void CloseSocket();
-
+void InitAddressStruct();
+void BindSocketAndListen();
+void AcceptConnections();
 
 
 
@@ -63,19 +67,20 @@ void CloseSocket();
 
 int main()
 {
-    CreateSocket();
+    OpenSocket();
     DisplayInfo();
+    AcceptConnections();
     CloseSocket();
     return 0;
 }
 
 
 
-void CreateSocket()
+void OpenSocket()
 {
     char hostname[HostNameMaxSize];
-    listenSocket =  socket(AF_INET, SOCK_STREAM, 0);    //Attempt to open socket
-    if(listenSocket == -1)                              //If socket fails, exit
+    ListenSocket =  socket(AF_INET, SOCK_STREAM, 0);    //Attempt to open socket
+    if(ListenSocket == -1)                              //If socket fails, exit
     {
         printf("Error creating socket\n");
         exit(1);
@@ -91,8 +96,9 @@ void CreateSocket()
         herror("GetHostByName failed. Error: \n");
         exit(1);
     }
-
     herror("Error printed for reference: ");            //Check value of errno. TODO Remove this when no longer needed
+    InitAddressStruct();
+    BindSocketAndListen();
 }
 
 
@@ -107,11 +113,32 @@ void DisplayInfo()
        ipAddress.s_addr = *(u_long*)HostByName->h_addr_list[i++];
         printf("%s\n", inet_ntoa(ipAddress));
     }
-    printf("Port:      %d\n");
+    printf("Port:      %d\n", 0); //TODO Fill in the blanks =-)
 
 }
 
 void CloseSocket()
+{
+
+}
+
+void InitAddressStruct()
+{
+    SocketAddress = malloc(sizeof(struct sockaddr_in)); //TODO Free this struct
+    memset((void*) &SocketAddress, 0, (size_t)sizeof(SocketAddress));
+    SocketAddress->sin_family = (short)(AF_INET);
+    memcpy((void*) &SocketAddress->sin_addr, (void*) &HostByName->h_addrtype, HostByName->h_length);
+    SocketAddress->sin_port = htons((u_short)8000);
+}
+
+void BindSocketAndListen()
+{
+    //TODO Add error checking
+    bind(ListenSocket, (struct sockaddr*) &SocketAddress, (socklen_t)sizeof(SocketAddress));
+    listen(ListenSocket, 100); //Maximum number of listeners.TODO Change arbitrary number to constant
+}
+
+void AcceptConnections()
 {
 
 }

@@ -9,11 +9,15 @@
 
 #include <sys/types.h>
 #include <pthread.h>
+#include <unistd.h>
 
 
 //Globals
 int listenSocket = 0;
+struct hostent *HostByName = NULL;
 
+//Constants
+const int HostNameMaxSize = 256;
 
 //Steps
 //1. Create server socket
@@ -31,6 +35,7 @@ void DisplayInfo();
 int main()
 {
     CreateSocket();
+    DisplayInfo();
     return 0;
 }
 
@@ -38,10 +43,22 @@ int main()
 
 void CreateSocket()
 {
-    //char hostname[256];
-    listenSocket =  socket(AF_INET, SOCK_STREAM, 0);
-    //gethostbyname(hostname); //Note: this function resolves URL to IP address
-    //printf("%s\n", hostname);
-    printf("Socket %d", listenSocket);
+    char hostname[HostNameMaxSize];
+    listenSocket =  socket(AF_INET, SOCK_STREAM, 0); //Attempt to open socket
+    if(listenSocket == -1) //If socket fails, exit
+    {
+        printf("Error creating socket\n");
+        exit(1);
+    }
+    gethostname(hostname, sizeof(hostname));
+    HostByName = gethostbyname(hostname); //Note: this function resolves URL to IP address
+
+
+}
+
+
+void DisplayInfo()
+{
+    
 
 }

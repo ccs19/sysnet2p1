@@ -69,7 +69,7 @@ int main()
 {
     OpenSocket();
     DisplayInfo();
-    AcceptConnections();
+    //AcceptConnections();
     CloseSocket();
     return 0;
 }
@@ -113,7 +113,7 @@ void DisplayInfo()
        ipAddress.s_addr = *(u_long*)HostByName->h_addr_list[i++];
         printf("%s\n", inet_ntoa(ipAddress));
     }
-    printf("Port:      %d\n", 0); //TODO Fill in the blanks =-)
+    printf("Port:      %d\n", SocketAddress->sin_port); //TODO Fill in the blanks =-)
 
 }
 
@@ -124,11 +124,13 @@ void CloseSocket()
 
 void InitAddressStruct()
 {
+
     SocketAddress = malloc(sizeof(struct sockaddr_in)); //TODO Free this struct
-    memset((void*) &SocketAddress, 0, (size_t)sizeof(SocketAddress));
-    SocketAddress->sin_family = (short)(AF_INET);
+    memset((void*) SocketAddress, 0, (size_t)sizeof(struct sockaddr_in));
+    SocketAddress->sin_family = AF_INET;
     memcpy((void*) &SocketAddress->sin_addr, (void*) &HostByName->h_addrtype, HostByName->h_length);
-    SocketAddress->sin_port = htons((u_short)8000);
+    SocketAddress->sin_port = htons((u_short)8000); //TODO Make sure parameters for memset and memcpy are correct. Might cause segfault
+
 }
 
 void BindSocketAndListen()
@@ -140,5 +142,13 @@ void BindSocketAndListen()
 
 void AcceptConnections()
 {
+    int connectionSocket = 0;
+    for(;;)
+    {
+        connectionSocket = accept(ListenSocket, NULL, NULL);
 
+
+        close(connectionSocket);
+
+    }
 }

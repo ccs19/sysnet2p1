@@ -71,6 +71,7 @@ int main()
     DisplayInfo();
     //AcceptConnections();
     CloseSocket();
+    free(SocketAddress); //Temporary free
     return 0;
 }
 
@@ -124,13 +125,11 @@ void CloseSocket()
 
 void InitAddressStruct()
 {
-
-    SocketAddress = malloc(sizeof(struct sockaddr_in)); //TODO Free this struct
+    SocketAddress = malloc(sizeof(struct sockaddr_in)); //TODO Free this struct OR make into global variable
     memset((void*) SocketAddress, 0, (size_t)sizeof(struct sockaddr_in));
     SocketAddress->sin_family = AF_INET;
     memcpy((void*) &SocketAddress->sin_addr, (void*) &HostByName->h_addrtype, HostByName->h_length);
-    SocketAddress->sin_port = htons((u_short)8000); //TODO Make sure parameters for memset and memcpy are correct. Might cause segfault
-
+    SocketAddress->sin_port = htons((u_short)8000); //TODO Make sure parameters for memset and memcpy are correct. Potential segfault?
 }
 
 void BindSocketAndListen()

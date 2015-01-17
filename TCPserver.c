@@ -144,7 +144,7 @@ void InitAddressStruct()
     memset((void*) SocketAddress, 0, (size_t)sizeof(struct sockaddr_in));
     SocketAddress->sin_family = AF_INET;
     memcpy((void*) &SocketAddress->sin_addr, (void*) &HostByName->h_addrtype, HostByName->h_length);
-    SocketAddress->sin_port = htons((u_short)8000);
+    SocketAddress->sin_port = htons((u_short)19000);
 }
 
 void BindSocketAndListen()

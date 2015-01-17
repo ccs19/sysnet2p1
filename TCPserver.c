@@ -80,8 +80,9 @@ int main()
 {
     OpenSocket();
     InitDetachedThread();
-    pthread_create(&DetachedThread, &ThreadAttribute, (void*)AcceptConnections, NULL);
-    free(SocketAddress); //Temporary free
+    pthread_create(&DetachedThread, &ThreadAttribute, (void *) AcceptConnections, NULL);
+    //free(SocketAddress); //Temporary free
+    sleep(500);
     return 0;
 }
 
@@ -143,7 +144,7 @@ void InitAddressStruct()
     memset((void*) SocketAddress, 0, (size_t)sizeof(struct sockaddr_in));
     SocketAddress->sin_family = AF_INET;
     memcpy((void*) &SocketAddress->sin_addr, (void*) &HostByName->h_addrtype, HostByName->h_length);
-    SocketAddress->sin_port = htons((u_short)8000); //TODO Make sure parameters for memset and memcpy are correct. Potential segfault?
+    SocketAddress->sin_port = htons((u_short)8000);
 }
 
 void BindSocketAndListen()

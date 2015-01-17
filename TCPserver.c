@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <string.h>
+#include <string.h> //for memset, memcpy, memcmp
 
 
 //Globals
@@ -21,7 +21,7 @@ struct sockaddr_in *SocketAddress = NULL;
 
 //Constants
 const int HostNameMaxSize = 256;
-
+const int MaxStringLength = 256;
 
 
 
@@ -47,10 +47,10 @@ char **h_addr_list;        list of addresses
 //TODO Implement in header eventually
 void OpenSocket();
 void DisplayInfo();
-void CloseSocket();
 void InitAddressStruct();
 void BindSocketAndListen();
 void AcceptConnections();
+void InitDetachedThread();
 
 
 
@@ -65,12 +65,22 @@ void AcceptConnections();
 //4. Child thread close socket and terminate
 
 
+//Byte order transformation
+//u_short htons host_short
+//        ntohs network_short
+//u_long  htonl host_long
+//u_long  ntohl network_long
+
+
+//THREAD
+pthread_t DetachedThread;
+pthread_attr_t ThreadAttribute;
+
 int main()
 {
     OpenSocket();
-    DisplayInfo();
-    //AcceptConnections();
-    CloseSocket();
+    InitDetachedThread();
+    pthread_create(&DetachedThread, &ThreadAttribute, (void*)AcceptConnections, NULL);
     free(SocketAddress); //Temporary free
     return 0;
 }
@@ -94,9 +104,13 @@ void OpenSocket()
     HostByName = gethostbyname(hostname);
     if(HostByName ==  NULL)                             //If gethostbyname fails print error message, exit
     {
-        herror("GetHostByName failed. Error: \n");
+        herror("GetHostByName failed. Error: ");
         exit(1);
     }
+
+    //Check for Unknown host error
+    //char checkForUnknownHost[MaxStringLength];
+
     herror("Error printed for reference: ");            //Check value of errno. TODO Remove this when no longer needed
     InitAddressStruct();
     BindSocketAndListen();
@@ -114,8 +128,8 @@ void DisplayInfo()
        ipAddress.s_addr = *(u_long*)HostByName->h_addr_list[i++];
         printf("%s\n", inet_ntoa(ipAddress));
     }
-    printf("Port:      %d\n", SocketAddress->sin_port); //TODO Fill in the blanks =-)
-
+    printf("Port:      %d\n", SocketAddress->sin_port);
+    fflush(stdout);
 }
 
 void CloseSocket()
@@ -136,7 +150,7 @@ void BindSocketAndListen()
 {
     //TODO Add error checking
     bind(ListenSocket, (struct sockaddr*) &SocketAddress, (socklen_t)sizeof(SocketAddress));
-    listen(ListenSocket, 100); //Maximum number of listeners.TODO Change arbitrary number to constant
+    listen(ListenSocket, 10000); //Maximum number of listeners.TODO Change arbitrary number to constant
 }
 
 void AcceptConnections()
@@ -144,10 +158,14 @@ void AcceptConnections()
     int connectionSocket = 0;
     for(;;)
     {
-        connectionSocket = accept(ListenSocket, NULL, NULL);
-
-
+        DisplayInfo();
+        connectionSocket = accept(ListenSocket, (struct sockaddr*)SocketAddress, NULL);
         close(connectionSocket);
-
     }
+}
+
+void InitDetachedThread()
+{
+    pthread_attr_init(&ThreadAttribute);
+    pthread_attr_setdetachstate(&ThreadAttribute, PTHREAD_CREATE_DETACHED);
 }

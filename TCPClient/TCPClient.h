@@ -4,7 +4,7 @@
  * Project 1
  * Christopher Schneider & Brett Rowberry
  *
- * This file describes the functions to be implemented by the TCPclient.
+ * This file describes the functions to be implemented by the TCPClient.
  * You may also implement any auxiliary functions you deem necessary.
  */
 

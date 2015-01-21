@@ -1,3 +1,13 @@
+/*
+ * TCPclient.c
+ * Systems and Networks II
+ * Project 1
+ * Christopher Schneider & Brett Rowberry
+ *
+ * This file implements TCPClient functions.
+ * You may also implement any auxiliary functions you deem necessary.
+ */
+
 #include <stdio.h>
 #include "TCPClient.h"
 

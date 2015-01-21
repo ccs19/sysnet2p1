@@ -101,3 +101,15 @@ They are placeholders. The < and > symbols are widely used to indicate parameter
 In a nutshell, you can expect your input to be:
 
 localhost 22
+
+---
+Tests:
+-client and server communicate
+-server displays host name and IP address and the port number used
+-server must be able to handle incorrectly formatted messages and respond
+with an error message to the client
+-Java and C client correctly connect to server. They must be able to
+o retrieve load information from server
+o receive echo messages from server sent by the client
+o display messages received from the server in a readable format on
+the screen

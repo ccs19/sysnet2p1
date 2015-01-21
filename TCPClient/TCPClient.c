@@ -1,5 +1,5 @@
 /*
- * TCPclient.c
+ * TCPClient.c
  * Systems and Networks II
  * Project 1
  * Christopher Schneider & Brett Rowberry

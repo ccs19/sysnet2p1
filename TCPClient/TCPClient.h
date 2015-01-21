@@ -1,5 +1,5 @@
 /*
- * TCPclient.h
+ * TCPClient.h
  * Systems and Networks II
  * Project 1
  * Christopher Schneider & Brett Rowberry
@@ -7,8 +7,9 @@
  * This file describes the functions to be implemented by the TCPClient.
  *
  * Creates a streaming socket and connects to a server.
- *
- * serverName - the ip address or hostname of the server given as a string
+ */
+
+/* serverName - the ip address or hostname of the server given as a string
  * port       - the port number of the server
  * dest       - the server's address information; the structure should be created with information
  *              on the server (like port, address, and family) in this function call

@@ -5,10 +5,7 @@
  * Christopher Schneider & Brett Rowberry
  *
  * This file describes the functions to be implemented by the TCPClient.
- * You may also implement any auxiliary functions you deem necessary.
- */
-
-/*
+ *
  * Creates a streaming socket and connects to a server.
  *
  * serverName - the ip address or hostname of the server given as a string
@@ -18,6 +15,7 @@
  *
  * return value - the socket identifier or a negative number indicating the error if a connection could not be established
  */
+
 int createSocket(char * serverName, int port, struct sockaddr_in * dest);
 
 /*

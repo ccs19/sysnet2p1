@@ -22,3 +22,15 @@ $(TARGET): $(OBJECTS)
 .PHONY : all $(TARGET) clean
 clean: 
 	rm $(TARGET) $(OBJECTS)
+
+#how to have multiple targets in same makefile
+#all: pattern coding sort tokenize
+#
+#pattern: pattern.c
+#	gcc -o pattern pattern.c
+#coding: coding.c
+#	gcc -o coding coding.c
+#sort: sort.c
+#	gcc -o sort sort.c
+#tokenize: tokenize.c
+#	gcc -o tokenize tokenize.c

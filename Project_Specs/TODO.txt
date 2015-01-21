@@ -1,0 +1,103 @@
+>TCPServer
+
+>should an invalid command line option simply indicate an error, or attempt to execute with
+>defaults?
+
+Indicate an error if no positive number was entered or more than one or no number was entered.
+Otherwise, attempt to execute. Choose appropriate data types for the port number.
+
+> should we gracefully handle an attempt to send / receive more than 256 bytes per message
+> (is that including the delimiters or excluding them)?
+
+The 256 bytes per message includes delimeters because the delimiters should be considered part of the message.
+The server never has to deal with larger than 256 bytes message and the client simply refuses to send larger than
+256 bytes messages. In other words, any user input that would exceed 256 bytes for the client's message won't have to
+be transmitted by the client. Generate an error message in that case.
+
+> should we place a limit on the number of simultaneous clients which can connect to the
+> server?
+
+You can assume a limit of the number of clients that the server can handle.
+
+> 2.[3] should the reply for malformed messages be <error>unknown format </error> (with a
+>trailing space between the delimiters), or <error>unknown format</error>
+>(with no extraneous white space)?
+
+Don't include trailing spaces between delimeters. I am testing for the exact string in my test program.
+
+>2.[4] suggests that the child thread terminates after _any_ message is received and a reply is
+>sent, is this correct?
+
+Correct. Don't implement an open channel to the client. Close it after the response.
+The client will have to reopen a connection.
+
+>Should we implement a timeout for receiving the (complete) message?
+
+No timeout. We will deal with timeout issues later.
+
+>Should we consider extraneous bytes outside of a start / stop tag as an error: eg:
+>yyyy<start>message<stop>xxxx (this could be used to include additional information for
+>debugging)
+
+I am not testing for them. You may or may not address those issues.
+
+>Is it permissible to design server shutdown in any way we so choose, as long as it does not
+>create zombies and responds to CTRL-C as prescribed?
+
+Correct. But please use multi-threaded programming solutions for the server.
+
+----------
+
+TCPClient
+
+>Should we implement a timeout for receiving the (complete) reply?
+
+No. See above.
+
+>Should we consider extraneous bytes outside of a start / stop tag as an error: eg:
+>yyyy<start>message<stop>xxxx (this could be used to include additional information for
+>debugging)
+
+As above.
+
+>should an invalid command line option simply indicate an error, or attempt to execute with
+>defaults?
+
+If more or fewer than 2 parameters are entered, indicate an error. I asked to accept two parameters.
+So if more than 2 parameters are entered or if the second parameter is not a positive number, return an error.
+As to the first parameter, simply assume it is a host name and let the gethostbyname() function tell you otherwise.
+It's the simplest solution to the parameter testing problem.
+
+>what is the prescribed handling of a malformed reply message?
+
+Interesting. You may assume that such messages cannot be generated because the client is nice.
+
+Again. The focus of this assignment is client-server program with the implementation of a simple
+application-layer protocol. A robust protocol would normally address the issue you raise here.
+
+---
+gethostbyname("mydesktop") is not going to be a valid hostname. Calling herror doesn't return a string,
+but prints "Unknown host" to stderr.
+
+I'd like to capture this output and put it into a string (char array), but cannot figure out how to do this.
+hstrerror() -- though I belive both herror() and hstrerror() are deprecated;
+strerror() or strerror_r() should do what you want.
+
+With all these functions that you'll be using in the future please check the return value for NULL. People have been troubleshooting for hours because they didn't check whether the creation of the socket suceeded or not.
+
+---
+In the description, the expected format as written is "<hostname> <portnum>".  Is the implementation meant to include the < and > or are they just placeholder text?
+
+Specifically, which of the following is the intended format:
+
+$ <localhost> <22>
+
+or
+
+$ localhost 22
+
+They are placeholders. The < and > symbols are widely used to indicate parameters.
+
+In a nutshell, you can expect your input to be:
+
+localhost 22

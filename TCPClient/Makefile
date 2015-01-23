@@ -10,7 +10,7 @@ DEBUG = -g
 CFLAGS = $(DEBUG) -Wall
 LDLIBS =
 TARGET = TCPClient
-SOURCES = TCPClient.c
+SOURCES = TCPmain.c TCPClient.c
 OBJECTS = $(patsubst %.c, %.o, $(SOURCES))
 
 $(TARGET): $(OBJECTS)

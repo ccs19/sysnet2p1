@@ -7,6 +7,8 @@
  * This is a tester file for TCPClient.c
  */
 
+#include "TCPClient.h"
+
 int main()
 {
     return 0;

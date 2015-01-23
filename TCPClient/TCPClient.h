@@ -16,7 +16,6 @@
  *
  * return value - the socket identifier or a negative number indicating the error if a connection could not be established
  */
-
 int createSocket(char * serverName, int port, struct sockaddr_in * dest);
 
 /*

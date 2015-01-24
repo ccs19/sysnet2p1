@@ -8,7 +8,6 @@
  * You may also implement any auxiliary functions you deem necessary.
  */
 
-
 //from textbook p.115
 #include <stdio.h>      /* for printf() and fprintf()*/
 #include <stdlib.h>     /* for atoi() and exit() */
@@ -24,13 +23,12 @@
 #include <sys/wait.h>   /* */
 #include "TCPClient.h"
 
-
 const int connPort = 40000;
 
 int main()
 {
     struct sockaddr_in server;
-    createSocket("mint-desktop", 40000, &server);
+    createSocket("cs-ssh3.cs.uwf.edu", 49227, &server);
     return 0;
 }
 
@@ -48,7 +46,6 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 {
     int socketFD = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //domain: AF_INET (for IPv4) | type: SOCK_STREAM | protocol: default
     struct hostent *hostptr = gethostbyname(serverName);
-   // struct sockaddr_in serv;
 
     if(socketFD < 0)
     {
@@ -62,7 +59,6 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
         exit(1);
     }
 
-
     //testing
     printf("host %s", hostptr->h_name);
 
@@ -75,14 +71,6 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
         ipAddress.s_addr = *(u_long*)hostptr->h_addr_list[i++];
         printf("%s\n", inet_ntoa(ipAddress));
     }
-
-
-
-
-
-
-
-
 
     memset((void*)dest, 0, sizeof(struct sockaddr_in));    /* zero the struct */
     dest->sin_family = AF_INET;

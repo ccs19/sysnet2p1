@@ -23,13 +23,6 @@
 #include <sys/wait.h>   /* */
 #include "TCPClient.h"
 
-int main()
-{
-    struct sockaddr_in server;
-    createSocket("cs-ssh3.cs.uwf.edu", 49227, &server);
-    return 0;
-}
-
 /*
  * Creates a streaming socket and connects to a server.
  *

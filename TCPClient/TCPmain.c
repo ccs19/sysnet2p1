@@ -15,15 +15,13 @@
  * returns a positive value if the expected value matches the return value and zero otherwise
  */
 
-#include "TCPClient.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <string.h>
 
-#include "headerFiles.h"
+#include "TCPClient.h"
 
 int runTest(char *hostname, int portNum, char *req, char *expctResp)
 {

@@ -23,26 +23,49 @@
  */
 int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 {
-    int socketFD = socket(AF_INET, SOCK_STREAM, 0);
-    if(socketFD < 0)
+    int socketFD = socket(AF_INET, SOCK_STREAM, 0); //domain: AF_INET (for IPv4) | type: SOCK_STREAM | protocol: default
+    if(socketFD > 0)
+    {
+        printf("Success, socketFD = %d\n", socketFD);
+    }
+    else
     {
         perror("Failed to create TCP socket.");
-        return -1;
+        return -1; //TODO: should just return socketFD, I think
     }
 
     struct hostent *hostptr;
 
     hostptr = gethostbyname(serverName);
+
     if(hostptr == NULL)
     {
         perror("gethostbyname() failed\n");
         return -1;
     }
+    else
+    {
+        puts("");
+        printf("hostptr->h_name: %s\n", hostptr->h_name);
+        printf("hostptr->h_length: %d\n", hostptr->h_length);
+        printf("hostptr->h_addrtype: %d\n", hostptr->h_addrtype);
+        printf("hostptr->h_addr_list[0] %s\n", hostptr->h_addr_list[0]);
+        printf("hostptr->h_addr_list[1] %s\n", hostptr->h_addr_list[1]);
+        printf("hostptr->h_aliases[0] %s\n", hostptr->h_aliases[0]);
+        printf("hostptr->h_aliases[1] %s\n", hostptr->h_aliases[1]);
+    }
 
-    memset(dest, 0, sizeof(struct sockaddr_in));
+    memset(dest, 0, sizeof(struct sockaddr_in));    /* zero the struct */
     dest->sin_family = AF_INET;
-    memcpy(&dest->sin_addr, hostptr->h_addr, hostptr->h_length);
-    dest->sin_port = htons( (u_short)port );
+    memcpy( (void *)&dest->sin_addr, (void *)hostptr->h_addr, hostptr->h_length);
+    dest->sin_port = htons( (u_short)port );        /* set destination port number */
+
+    puts("");
+    printf("dest->sin_family: %hhu\n", dest->sin_family);
+    printf("dest->sin_len: %hhu\n", dest->sin_len);
+    printf("dest->sin_addr.s_addr: %u\n", dest->sin_addr.s_addr);
+    printf("dest->sin_port: %u\n", dest->sin_port);
+    printf("dest->sin_zero: %s\n", dest->sin_zero);
 
     return 0;
 }
@@ -60,7 +83,8 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 int sendRequest(int sock, char * request, struct sockaddr_in * dest)
 {
     write(sock, (struct sockaddr *)&dest, sizeof(dest));
-//    fgets( request, 256, stdin );
+//    write(sock, buf, strlen(buf) + 1);
+    fgets( request, 256, stdin );
 //    int sendlen = strlen( request ) - 1;
 //    int bytes = sendto(sock, request, (size_t)dest->sin_len, 0,
 //            (struct sockaddr *)&dest, (socklen_t)sizeof(dest) );
@@ -79,7 +103,18 @@ int sendRequest(int sock, char * request, struct sockaddr_in * dest)
 */
 int receiveResponse(int sock, char * response)
 {
+    char buffer[256]; /* +1 so we can add null terminator */
+//    int len;
 
+    bzero(buffer, 256); //instead of memset
+    read(sock, buffer, 255);
+
+//    connect(sock, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+
+//    len = recv(mysocket, buffer, 255, 0);
+
+//    /* We have to null terminate the received data ourselves */
+//    buffer[len] = '\0';
     return 0;
 }
 
@@ -106,4 +141,5 @@ int closeSocket(int sock)
     int socketCloseError = close(sock);
     if(socketCloseError < 0) perror("Error closing socket.");
     return socketCloseError;
+    //return EXIT_SUCCESS
 }

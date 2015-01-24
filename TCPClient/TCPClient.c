@@ -23,8 +23,6 @@
 #include <sys/wait.h>   /* */
 #include "TCPClient.h"
 
-const int connPort = 40000;
-
 int main()
 {
     struct sockaddr_in server;

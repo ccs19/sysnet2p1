@@ -8,8 +8,31 @@
  * You may also implement any auxiliary functions you deem necessary.
  */
 
-#include "headerFiles.h"
+
+//from textbook p.115
+#include <stdio.h>      /* for printf() and fprintf()*/
+#include <stdlib.h>     /* for atoi() and exit() */
+#include <sys/types.h>  /* for Socket data types */
+#include <sys/socket.h> /* for socket(), connect(), send(), and recv() */
+#include <netinet/in.h> /* for IP Socket data types() */
+#include <netdb.h>      /* */
+#include <errno.h>      /* */
+#include <signal.h>     /* */
+#include <unistd.h>     /* for close() */
+#include <string.h>     /* for memset() */
+#include <arpa/inet.h>  /* for sockaddr_in and inet_addr() */
+#include <sys/wait.h>   /* */
 #include "TCPClient.h"
+
+
+const int connPort = 40000;
+
+int main()
+{
+    struct sockaddr_in server;
+    createSocket("mint-desktop", 40000, &server);
+    return 0;
+}
 
 /*
  * Creates a streaming socket and connects to a server.
@@ -23,49 +46,52 @@
  */
 int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 {
-    int socketFD = socket(AF_INET, SOCK_STREAM, 0); //domain: AF_INET (for IPv4) | type: SOCK_STREAM | protocol: default
-    if(socketFD > 0)
-    {
-        printf("Success, socketFD = %d\n", socketFD);
-    }
-    else
-    {
-        perror("Failed to create TCP socket.");
-        return -1; //TODO: should just return socketFD, I think
-    }
+    int socketFD = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //domain: AF_INET (for IPv4) | type: SOCK_STREAM | protocol: default
+    struct hostent *hostptr = gethostbyname(serverName);
+    struct sockaddr_in serv;
 
-    struct hostent *hostptr;
-
-    hostptr = gethostbyname(serverName);
+    if(socketFD < 0)
+    {
+        printf("Socket creation failed, socket");
+        exit(1);
+    }
 
     if(hostptr == NULL)
     {
-        perror("gethostbyname() failed\n");
-        return -1;
+        perror("gethostbyname() failed, exit\n"); //TODO implement retry every N seconds
+        exit(1);
     }
-    else
+
+
+    //testing
+    printf("host %s", hostptr->h_name);
+
+    struct in_addr ipAddress;
+    int i=0;
+
+    printf("\nIP: " );
+    while(hostptr->h_addr_list[i] != 0)
     {
-        puts("");
-        printf("hostptr->h_name: %s\n", hostptr->h_name);
-        printf("hostptr->h_length: %d\n", hostptr->h_length);
-        printf("hostptr->h_addrtype: %d\n", hostptr->h_addrtype);
-        printf("hostptr->h_addr_list[0] %s\n", hostptr->h_addr_list[0]);
-        printf("hostptr->h_addr_list[1] %s\n", hostptr->h_addr_list[1]);
-        printf("hostptr->h_aliases[0] %s\n", hostptr->h_aliases[0]);
-        printf("hostptr->h_aliases[1] %s\n", hostptr->h_aliases[1]);
+        ipAddress.s_addr = *(u_long*)hostptr->h_addr_list[i++];
+        printf("%s\n", inet_ntoa(ipAddress));
     }
 
-    memset(dest, 0, sizeof(struct sockaddr_in));    /* zero the struct */
-    dest->sin_family = AF_INET;
-    memcpy( (void *)&dest->sin_addr, (void *)hostptr->h_addr, hostptr->h_length);
-    dest->sin_port = htons( (u_short)port );        /* set destination port number */
 
-    puts("");
-    printf("dest->sin_family: %hhu\n", dest->sin_family);
-    printf("dest->sin_len: %hhu\n", dest->sin_len);
-    printf("dest->sin_addr.s_addr: %u\n", dest->sin_addr.s_addr);
-    printf("dest->sin_port: %u\n", dest->sin_port);
-    printf("dest->sin_zero: %s\n", dest->sin_zero);
+
+
+
+
+
+
+
+    memset((void*)&serv, 0, sizeof(struct sockaddr_in));    /* zero the struct */
+    serv.sin_family = AF_INET;
+    //memcpy( (void *)&serv->sin_addr, (void *)hostptr->h_addr, hostptr->h_length);
+    serv.sin_port = htons( (u_short)port );        /* set destination port number */
+    printf("port: %d\n", htons(serv.sin_port));
+
+    if( connect( socketFD, (struct sockaddr *) &serv, sizeof(serv)) < 0)
+        printf("Failed to connect");
 
     return 0;
 }

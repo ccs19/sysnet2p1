@@ -8,20 +8,8 @@
  * You may also implement any auxiliary functions you deem necessary.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-//#include <tclDecls.h>
-#include <tcl.h>
-//#include <tclPlatDecls.h>
-//#include "TCPClient.h"
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include "headerFiles.h"
+#include "TCPClient.h"
 
 /*
  * Creates a streaming socket and connects to a server.
@@ -35,15 +23,28 @@
  */
 int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 {
-    struct sockaddr_in myaddr;
-    int sockfd;
-    myaddr.sin_family = AF_INET;
-    myaddr.sin_port = htons(3490);
-    inet_aton("www.uwf.edu", &myaddr.sin_addr.s_addr);
-    sockfd = socket(PF_INET, SOCK_STREAM, 0);
-    bind(sockfd, (struct sockaddr*)myaddr, sizeof(myaddr));
-    if(sockfd < 0) perror("Error creating socket");
-    return sockfd;
+    int socketFD = socket(AF_INET, SOCK_STREAM, 0);
+    if(socketFD < 0)
+    {
+        perror("Failed to create TCP socket.");
+        return -1;
+    }
+
+    struct hostent *hostptr;
+
+    hostptr = gethostbyname(serverName);
+    if(hostptr == NULL)
+    {
+        perror("gethostbyname() failed\n");
+        return -1;
+    }
+
+    memset(dest, 0, sizeof(struct sockaddr_in));
+    dest->sin_family = AF_INET;
+    memcpy(&dest->sin_addr, hostptr->h_addr, hostptr->h_length);
+    dest->sin_port = htons( (u_short)port );
+
+    return 0;
 }
 
 /*
@@ -59,6 +60,11 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 int sendRequest(int sock, char * request, struct sockaddr_in * dest)
 {
     write(sock, (struct sockaddr *)&dest, sizeof(dest));
+//    fgets( request, 256, stdin );
+//    int sendlen = strlen( request ) - 1;
+//    int bytes = sendto(sock, request, (size_t)dest->sin_len, 0,
+//            (struct sockaddr *)&dest, (socklen_t)sizeof(dest) );
+//    bind(sock, (struct sockaddr *)dest, dest->sin_len);
     return 0;
 }
 
@@ -85,7 +91,7 @@ int receiveResponse(int sock, char * response)
 */
 void printResponse(char* response)
 {
-
+    printf("%s", response);
 }
 
 /*

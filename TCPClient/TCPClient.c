@@ -86,7 +86,7 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 
     memset((void*)&serv, 0, sizeof(struct sockaddr_in));    /* zero the struct */
     serv.sin_family = AF_INET;
-    //memcpy( (void *)&serv->sin_addr, (void *)hostptr->h_addr, hostptr->h_length);
+    memcpy( (void *)&serv->sin_addr, (void *)hostptr->h_addr, hostptr->h_length);
     serv.sin_port = htons( (u_short)port );        /* set destination port number */
     printf("port: %d\n", htons(serv.sin_port));
 

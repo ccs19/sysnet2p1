@@ -122,15 +122,14 @@ void BindSocketAndListen()
 void AcceptConnections()
 {
     DisplayInfo();
-
     unsigned int clientAddressSize = sizeof(ClientAddress);
     for(;;)
     {
 
         if( (ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddress, &clientAddressSize) ) < 0)
             ExitOnError("Error in accept()");
-        printf("Connected! Accepted client %s\n", inet_ntoa(ClientAddress.sin_addr));
-
+        //printf("Connected! Accepted client %s\n", inet_ntoa(ClientAddress.sin_addr));
+        HandleClientRequests();
         close(ClientSocket);    /* Close client socket */
     }
 }
@@ -148,3 +147,14 @@ void ExitOnError(char* errorMessage)
     exit(1);
 }
 
+void HandleClientRequests()
+{
+    const int BUFFERSIZE = 256;
+    char stringBuffer[BUFFERSIZE];
+    int msgSize = 0;
+
+    msgSize = read(ClientSocket, stringBuffer, sizeof(stringBuffer)); //TODO add error checking
+    stringBuffer[msgSize+1] = '\0';
+    printf("%s", stringBuffer);
+    fflush(stdout);
+}

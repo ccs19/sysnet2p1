@@ -48,7 +48,7 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 {
     int socketFD = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //domain: AF_INET (for IPv4) | type: SOCK_STREAM | protocol: default
     struct hostent *hostptr = gethostbyname(serverName);
-    struct sockaddr_in serv;
+   // struct sockaddr_in serv;
 
     if(socketFD < 0)
     {
@@ -84,13 +84,13 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 
 
 
-    memset((void*)&serv, 0, sizeof(struct sockaddr_in));    /* zero the struct */
-    serv.sin_family = AF_INET;
-    memcpy( (void *)&serv->sin_addr, (void *)hostptr->h_addr, hostptr->h_length);
-    serv.sin_port = htons( (u_short)port );        /* set destination port number */
-    printf("port: %d\n", htons(serv.sin_port));
+    memset((void*)dest, 0, sizeof(struct sockaddr_in));    /* zero the struct */
+    dest->sin_family = AF_INET;
+    memcpy( (void *)&dest->sin_addr, (void *)hostptr->h_addr, hostptr->h_length);
+    dest->sin_port = htons( (u_short)port );        /* set destination port number */
+    printf("port: %d\n", htons(dest->sin_port));
 
-    if( connect( socketFD, (struct sockaddr *) &serv, sizeof(serv)) < 0)
+    if( connect( socketFD, (struct sockaddr *) dest, sizeof(struct sockaddr_in)) < 0)
         printf("Failed to connect");
 
     return 0;

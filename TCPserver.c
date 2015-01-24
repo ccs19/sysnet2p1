@@ -45,36 +45,38 @@ const int MAXLISTENERS = 5;
 pthread_t DetachedThread;
 pthread_attr_t ThreadAttribute;
 
-int main()
+int main(int argc, const char* argv[])
 {
-    OpenSocket();
-    //InitDetachedThread();
-    AcceptConnections();
-    //pthread_create(&DetachedThread, &ThreadAttribute, (void *) AcceptConnections, NULL);
-    //free(ServerSocket); //Temporary free
-    sleep(500);
+    if(argc != 2)
+        printf("Usage:\n%s <port to open>\n",argv[0]);
+    else
+    {
+        OpenSocket(atoi(argv[1])); //Open socket with port in arg vector 1
+        //InitDetachedThread();
+        AcceptConnections();
+    }
     return 0;
 }
 
 
 //ServerSocket of type int
-void OpenSocket()
+void OpenSocket(int port)
 {
     char hostname[HostNameMaxSize];
 
-    if( ( ServerSocket =  socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) ) <  0)//If socket fails
+    if( ( ServerSocket =  socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) ) <  0)  //If socket fails
         ExitOnError("Error creating socket");
 
-    if(gethostname(hostname, sizeof(hostname)) < 0)   //If getting hostname fails
+    if(gethostname(hostname, sizeof(hostname)) < 0)                         //If getting hostname fails
         ExitOnError("Error acquiring hostname. Exiting");
 
-    if( ( HostByName = gethostbyname(hostname) ) ==  NULL)                             //If gethostbyname fails print error message, exit
+    if( ( HostByName = gethostbyname(hostname) ) ==  NULL)                  //If gethostbyname fails print error message, exit
     {
         herror("GetHostByName failed. Error: ");
         exit(1);
     }
 
-    InitAddressStruct();
+    InitAddressStruct(port);
     BindSocketAndListen();
 }
 
@@ -99,13 +101,12 @@ void CloseSocket()
 
 }
 
-void InitAddressStruct()
+void InitAddressStruct(int port)
 {
     memset((void*)&ServerAddress, '0', (size_t)sizeof(ServerAddress));
-    //memcpy((void*)&ServerSocket.sin_addr, (void*) &HostByName->h_addrtype, HostByName->h_length);
     ServerAddress.sin_family = AF_INET;
     ServerAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    ServerAddress.sin_port = htons(40000);
+    ServerAddress.sin_port = htons(port);
 
 }
 
@@ -113,7 +114,7 @@ void BindSocketAndListen()
 {
     if( ( bind(ServerSocket, (struct sockaddr *) &ServerAddress, (socklen_t)sizeof(ServerAddress)) )  < 0)
         ExitOnError("Failed to bind socket"); //If binding of socket fails
-    if( (listen(ServerSocket, MAXLISTENERS)) < 0)//Maximum number of listeners.TODO Change arbitrary number to constant
+    if( (listen(ServerSocket, MAXLISTENERS)) < 0)//Maximum number of listeners.
         ExitOnError("Failed to listen");
 
 }

@@ -178,16 +178,21 @@ void HandleClientRequests(void* ClientSocketPtr)
 int ParseClientMessage(char* clientMessage, int ClientSocket)
 {
 
+    /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
     int i = 0;
     char string[BUFFERSIZE]; //String to send back to client
-    char errorString[BUFFERSIZE];
-    errorString[0] = '\0'; //Set strings to empty
-    string[0] = '\0';
-    strcat(errorString, "<error>unknown format</error>");
+    char token[BUFFERSIZE]; //Token to use for echo reply
+    string[0] = '\0'; //Make string empty
+    strcat(string, "<error>unknown format</error>"); //Set default string
+
+    int test = 0;
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
 
     /*~~~~~~~~~~~~~~~~~~~~~Load avg response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     if(strcmp(clientMessage, "<loadavg/>") == 0)
     {
+        string[0] = '\0';
         double loadavg[3];
         getloadavg(loadavg, 3); //Get load average and put in double array
 
@@ -203,20 +208,21 @@ int ParseClientMessage(char* clientMessage, int ClientSocket)
     }
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-    /*~~~~~~~~~~~~~~~~~~~~~Echo response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-    else
-    {
-        char token[BUFFERSIZE];
-        XMLParser("<echo>", "</echo>", clientMessage, token, sizeof(token));
-        printf("token: %s\n", token);
-        fflush(stdout);
+    else {
+
+        test = (XMLParser("<echo>", "</echo>", clientMessage, token, sizeof(token)));
+        /*~~~~~~~~~~~~~~~~~~~~~Echo response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+        if (test == 1) {
+            //Set return echo string
+            string[0] = '\0';
+            strcat(string, "<reply>");
+            strcat(string, token);
+            strcat(string, "</reply>");
+        }
+        /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     }
-    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
-
-    //TODO implement error
-    //Syntax if unknown message
-    //Return <error>unknown format</error>
+    printf("Returning string to client: %s, test: %d \n", string, test);
+    fflush(stdout);
     send(ClientSocket, (void *) string, sizeof(string), 0); //Send string back to client.
     return 0;
 }
@@ -231,7 +237,7 @@ int ParseClientMessage(char* clientMessage, int ClientSocket)
  */
 int XMLParser(  const char* beginXml,
                 const char* endXml,
-                const char* clientMessage,
+                char* clientMessage,
                 char* token,
                 int tokenSize)
 {
@@ -240,33 +246,42 @@ int XMLParser(  const char* beginXml,
     char *delimiter = NULL;
     int returnVal = 0;
     int i = 0;
+    int beginXmlLength = strlen(beginXml);
+    int endXmlLength = strlen(endXml);
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
     token[0] = '\0'; //Empty string token
 
-    memcpy(tempString, clientMessage, strlen(beginXml)); //Copy first part of clientMessage into temp for comparison.
+    memcpy(tempString, clientMessage, beginXmlLength); //Copy first part of clientMessage into temp for comparison.
+    tempString[beginXmlLength] = '\0';
+    printf("Comparing %s and %s\n", tempString,  beginXml);
+    fflush(stdout);
 
     if(strcmp(tempString, beginXml) == 0 ) //If beginXml is found
     {
+        printf("They're the same!\n");
         memcpy(tempString, clientMessage, strlen(clientMessage)); //Copy entire clientMessage
         for(i = 1; i < strlen(clientMessage); i++) //Check for valid delimiter here
         {
-            if(tempString[i] == '<') //I
+            if(tempString[i] == '<')
             {
                 delimiter = tempString+i; //Potential valid delimiter found. Point delimiter ptr to location.
                 break;
             }
-
         }
+        delimiter[endXmlLength] = '\0';
+        printf("Comparing %s and %s\n", delimiter,  endXml);
+
         if(strcmp(delimiter, endXml) != 0) //Invalid delimiter
             returnVal = 0;
         else //We have a valid delimiter!
         {
+            printf("They're the same!\n");
             returnVal = 1;//Set valid return
             char *tempToken = clientMessage+(strlen(beginXml)); //Set temporary token to end of starting delimiter
             strtok(tempToken, "<");
             if(strlen(tempToken) > tokenSize ) returnVal = -1;              //If token is too large, return -1
-                else if(strcmp(tempToken, endXml) == 0 ) token[0] = '\0';   //Else if empty token found
+            else if(strcmp(tempToken, endXml) == 0 ) token[0] = '\0';   //Else if empty token found
             else strcat(token, tempToken);                                  //Else put extracted token in variable
         }
     }

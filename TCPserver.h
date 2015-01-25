@@ -10,4 +10,4 @@ void InitDetachedThread(pthread_attr_t*);
 void HandleClientRequests(void*);
 int ParseClientMessage(char*, int);
 
-int XMLParser(const char*,const char*,const char*, char*, int);
+int XMLParser(const char*,const char*,char*, char*, int);

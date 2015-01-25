@@ -45,7 +45,7 @@ pthread_attr_t ThreadAttribute;
 int main(int argc, const char* argv[])
 {
     if(argc != 2)
-        printf("Usage:\n%s <port to open>\n",argv[0]);
+        printf("Usage:\n%s <port to open>\n",argv[0]); //TODO check for negative port number entry
     else
     {
         OpenSocket(atoi(argv[1])); //Open socket with port in arg vector 1
@@ -153,9 +153,8 @@ void ExitOnError(char* errorMessage)
 
 void HandleClientRequests(void* ClientSocketPtr)
 {
-    int ClientSocket = *(int*)ClientSocketPtr;
-    printf("ClientSocket2: %d\n", ClientSocket);
     /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
+    int ClientSocket = *(int*)ClientSocketPtr;
     char stringBuffer[BUFFERSIZE];
     int msgSize = 0;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -167,9 +166,6 @@ void HandleClientRequests(void* ClientSocketPtr)
     else //Else parse message and do something.
     {
         stringBuffer[msgSize + 1] = '\0';
-        printf("%s", stringBuffer);
-        fflush(stdout);
-
         ParseClientMessage(stringBuffer, ClientSocket);
     }
     close(ClientSocket);    /* Close client socket */
@@ -181,38 +177,98 @@ void HandleClientRequests(void* ClientSocketPtr)
 //Parse message
 int ParseClientMessage(char* clientMessage, int ClientSocket)
 {
+
     int i = 0;
     char string[BUFFERSIZE]; //String to send back to client
+    char errorString[BUFFERSIZE];
+    errorString[0] = '\0'; //Set strings to empty
+    string[0] = '\0';
+    strcat(errorString, "<error>unknown format</error>");
 
+    /*~~~~~~~~~~~~~~~~~~~~~Load avg response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     if(strcmp(clientMessage, "<loadavg/>") == 0)
     {
-        string[0] = '\0'; //Make sure string is empty
         double loadavg[3];
-        getloadavg(loadavg, 3);
+        getloadavg(loadavg, 3); //Get load average and put in double array
 
         //Begin string format:
         strcat(string, "<replyLoadAvg>");
         for(i = 0; i < 3; i++)
         {
             char tempAvg[BUFFERSIZE];
-            sprintf(tempAvg, "%lf:", loadavg[i]);
-            strcat(string, tempAvg);
+            sprintf(tempAvg, "%lf:", loadavg[i]); //Print double to string
+            strcat(string, tempAvg);              //Append string to string we return to client
         }
-        strcat(string, "</replyLoadAvg>");
+        strcat(string, "</replyLoadAvg>"); //End of string
     }
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+    /*~~~~~~~~~~~~~~~~~~~~~Echo response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+    else
+    {
+        char token[BUFFERSIZE];
+        XMLParser("<echo>", "</echo>", clientMessage, token, sizeof(token));
+        printf("token: %s\n", token);
+        fflush(stdout);
+    }
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-    //TODO implement echo
-    //Syntax <echo>string</echo>
-    //When echo received, return <reply>string</reply>
-
-    //TODO implement loadavg
-    //Syntax </loadavg>
-    //Returns <replyLoadAvg>avg:avg:avg</replyLoadAvg>
 
     //TODO implement error
     //Syntax if unknown message
     //Return <error>unknown format</error>
-    send(ClientSocket, (void *) string, sizeof(string), 0);
+    send(ClientSocket, (void *) string, sizeof(string), 0); //Send string back to client.
     return 0;
+}
+
+/*
+    begin           --      The expected beginning of an XML expression
+    end             --      The expected ending of an XML expression
+    token           --      The token extracted from the expression
+    clientMessage   --      Message to parse
+    length          --      Size of token
+    return          --      1 on success, 0 on failure, -1 if token is too large to fit
+ */
+int XMLParser(  const char* beginXml,
+                const char* endXml,
+                const char* clientMessage,
+                char* token,
+                int tokenSize)
+{
+    //~~~~~~~~~~~~~Comparison strings~~~~~~~~~~~~~~~~//
+    char tempString[BUFFERSIZE];
+    char *delimiter = NULL;
+    int returnVal = 0;
+    int i = 0;
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+
+    token[0] = '\0'; //Empty string token
+
+    memcpy(tempString, clientMessage, strlen(beginXml)); //Copy first part of clientMessage into temp for comparison.
+
+    if(strcmp(tempString, beginXml) == 0 ) //If beginXml is found
+    {
+        memcpy(tempString, clientMessage, strlen(clientMessage)); //Copy entire clientMessage
+        for(i = 1; i < strlen(clientMessage); i++) //Check for valid delimiter here
+        {
+            if(tempString[i] == '<') //I
+            {
+                delimiter = tempString+i; //Potential valid delimiter found. Point delimiter ptr to location.
+                break;
+            }
+
+        }
+        if(strcmp(delimiter, endXml) != 0) //Invalid delimiter
+            returnVal = 0;
+        else //We have a valid delimiter!
+        {
+            returnVal = 1;//Set valid return
+            char *tempToken = clientMessage+(strlen(beginXml)); //Set temporary token to end of starting delimiter
+            strtok(tempToken, "<");
+            if(strlen(tempToken) > tokenSize ) returnVal = -1;              //If token is too large, return -1
+                else if(strcmp(tempToken, endXml) == 0 ) token[0] = '\0';   //Else if empty token found
+            else strcat(token, tempToken);                                  //Else put extracted token in variable
+        }
+    }
+    return returnVal;
 }

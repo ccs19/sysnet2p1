@@ -50,8 +50,7 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
         exit(1);
     }
 
-    //testing
-    printf("host %s", hostptr->h_name);
+
 
     struct in_addr ipAddress;
     int i=0;
@@ -62,13 +61,11 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
         ipAddress.s_addr = *(u_long*)hostptr->h_addr_list[i++];
         printf("%s\n", inet_ntoa(ipAddress));
     }
-
     memset((void*)dest, 0, sizeof(struct sockaddr_in));    /* zero the struct */
     dest->sin_family = AF_INET;
     memcpy( (void *)&dest->sin_addr, (void *)hostptr->h_addr, hostptr->h_length);
     dest->sin_port = htons( (u_short)port );        /* set destination port number */
     printf("port: %d\n", htons(dest->sin_port));
-
     if( connect( socketFD, (struct sockaddr *) dest, sizeof(struct sockaddr_in)) < 0)
         printf("Failed to connect");
 

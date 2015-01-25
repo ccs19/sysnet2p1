@@ -1,9 +1,4 @@
-
-
-
-
-
-
+#include <bits/pthreadtypes.h>
 
 void OpenSocket(int);
 void DisplayInfo();
@@ -13,4 +8,6 @@ void AcceptConnections();
 void ExitOnError(char*);
 void InitDetachedThread(pthread_attr_t*);
 void HandleClientRequests(void*);
-int ParseClientMessage(char*);
+int ParseClientMessage(char*, int);
+
+int XMLParser(const char*,const char*,const char*, char*, int);

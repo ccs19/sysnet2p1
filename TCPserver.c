@@ -221,10 +221,9 @@ void HandleClientRequests(void* ClientSocketPtr)
     int ClientSocket = *(int*)ClientSocketPtr;
     char stringBuffer[BUFFERSIZE];
     bzero(stringBuffer, BUFFERSIZE);
-    int msgSize = 0;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     fflush(stdout);
-    if( (msgSize = read(ClientSocket, stringBuffer, sizeof(stringBuffer))) < 0) //If read message fails
+    if( (read(ClientSocket, stringBuffer, sizeof(stringBuffer))) < 0) //If read message fails
     {
         printf("Failed to read message from client\n");
     }

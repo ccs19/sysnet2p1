@@ -93,17 +93,17 @@ int main(int argc, char** argv)
     else
         printf ("Passed test 2.\n\n");
 
-    if (!runTest (hostname, portNum, "<loadavg/>", NULL))
+    if (!runTest (hostname, portNum, "<loadavg/>>", "<error>unknown format</error>"))
         printf ("Failed test 3.\n");
     else
         printf ("Passed test 3.\n\n");
 
-    if (!runTest (hostname, portNum, "<echo>testststs     </echo>", "<reply>testststs     </reply>"))
+    if (!runTest (hostname, portNum, "<echo>     </echo>", "<reply>     </reply>"))
         printf ("Failed test 4.\n");
     else
         printf ("Passed test 4.\n\n");
 
-    if (!runTest (hostname, portNum, "<<loadavg/>", "<error>unknown format</error>"))
+    if (!runTest (hostname, portNum, "", "<error>unknown format</error>"))
         printf ("Failed test 5.\n");
     else
         printf ("Passed test 5.\n");

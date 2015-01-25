@@ -20,15 +20,11 @@
 //Globals
 //TODO Get rid of globals
 int ServerSocket = 0;
-int ClientSocket = 0;
 struct hostent *HostByName = NULL;
 struct sockaddr_in ServerAddress;
-struct sockaddr_in ClientAddress;
-char buffer[256];
 
 //Constants
 const int HostNameMaxSize = 256;
-const int MaxStringLength = 256;
 const int MAXLISTENERS = 5;
 
 //Steps
@@ -52,7 +48,7 @@ int main(int argc, const char* argv[])
     else
     {
         OpenSocket(atoi(argv[1])); //Open socket with port in arg vector 1
-        //InitDetachedThread();
+
         AcceptConnections();
     }
     return 0;
@@ -121,23 +117,32 @@ void BindSocketAndListen()
 
 void AcceptConnections()
 {
-    DisplayInfo();
+
+
+    /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
+    int* ClientSocket = NULL;
+    struct sockaddr_in ClientAddress;
     unsigned int clientAddressSize = sizeof(ClientAddress);
+    pthread_t DetachedThread;
+    pthread_attr_t ThreadAttribute;
+
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+    DisplayInfo();
+    InitDetachedThread(&ThreadAttribute);
     for(;;)
     {
-
-        if( (ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddress, &clientAddressSize) ) < 0)
+        ClientSocket = malloc(sizeof(int));
+        printf("ClientSocke1: %d\n", *ClientSocket);
+        if( (*ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddress, &clientAddressSize) ) < 0)
             ExitOnError("Error in accept()");
-        //printf("Connected! Accepted client %s\n", inet_ntoa(ClientAddress.sin_addr));
-        HandleClientRequests();
-        close(ClientSocket);    /* Close client socket */
+        pthread_create(&DetachedThread, &ThreadAttribute, (void*)HandleClientRequests, (void*)ClientSocket);
     }
 }
 
-void InitDetachedThread()
+void InitDetachedThread(pthread_attr_t* ThreadAttribute)
 {
-    pthread_attr_init(&ThreadAttribute);
-    pthread_attr_setdetachstate(&ThreadAttribute, PTHREAD_CREATE_DETACHED);
+    pthread_attr_init(ThreadAttribute);
+    pthread_attr_setdetachstate(ThreadAttribute, PTHREAD_CREATE_DETACHED);
 }
 
 
@@ -147,14 +152,48 @@ void ExitOnError(char* errorMessage)
     exit(1);
 }
 
-void HandleClientRequests()
+void HandleClientRequests(void* ClientSocketPtr)
 {
+    int ClientSocket = *(int*)ClientSocketPtr;
+    printf("ClientSocket2: %d\n", ClientSocket);
+    /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
     const int BUFFERSIZE = 256;
     char stringBuffer[BUFFERSIZE];
     int msgSize = 0;
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-    msgSize = read(ClientSocket, stringBuffer, sizeof(stringBuffer)); //TODO add error checking
-    stringBuffer[msgSize+1] = '\0';
-    printf("%s", stringBuffer);
-    fflush(stdout);
+    if( (msgSize = read(ClientSocket, stringBuffer, sizeof(stringBuffer))) < 0) //If read message fails
+    {
+        printf("Failed to read message from client\n");
+    }
+    else //Else parse message and do something.
+    {
+        stringBuffer[msgSize + 1] = '\0';
+        printf("%s", stringBuffer);
+        fflush(stdout);
+        send(ClientSocket, (void *) stringBuffer, sizeof(stringBuffer), 0);
+    }
+    close(ClientSocket);    /* Close client socket */
+    free(ClientSocketPtr);
+    pthread_exit(NULL);
+}
+
+
+//Parse message
+int ParseClientMessage(char* clientMessage)
+{
+
+    //TODO implement echo
+    //Syntax <echo>string</echo>
+    //When echo received, return <reply>string</reply>
+
+    //TODO implement loadavg
+    //Syntax </loadavg>
+    //Returns <replyLoadAvg>avg:avg:avg</replyLoadAvg>
+
+    //TODO implement error
+    //Syntax if unknown message
+    //Return <error>unknown format</error>
+
+    return 0;
 }

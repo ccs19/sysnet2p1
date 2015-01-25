@@ -11,6 +11,6 @@ void InitAddressStruct(int);
 void BindSocketAndListen();
 void AcceptConnections();
 void ExitOnError(char*);
-void InitDetachedThread();
-void HandleClientRequests(int);
+void InitDetachedThread(pthread_attr_t*);
+void HandleClientRequests(void*);
 int ParseClientMessage(char*);

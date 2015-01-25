@@ -26,6 +26,7 @@ struct sockaddr_in ServerAddress;
 //Constants
 const int HostNameMaxSize = 256;
 const int MAXLISTENERS = 5;
+const int BUFFERSIZE = 256;
 
 //Steps
 //1. Create server socket
@@ -48,7 +49,6 @@ int main(int argc, const char* argv[])
     else
     {
         OpenSocket(atoi(argv[1])); //Open socket with port in arg vector 1
-
         AcceptConnections();
     }
     return 0;
@@ -132,7 +132,6 @@ void AcceptConnections()
     for(;;)
     {
         ClientSocket = malloc(sizeof(int));
-        printf("ClientSocke1: %d\n", *ClientSocket);
         if( (*ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddress, &clientAddressSize) ) < 0)
             ExitOnError("Error in accept()");
         pthread_create(&DetachedThread, &ThreadAttribute, (void*)HandleClientRequests, (void*)ClientSocket);
@@ -157,7 +156,6 @@ void HandleClientRequests(void* ClientSocketPtr)
     int ClientSocket = *(int*)ClientSocketPtr;
     printf("ClientSocket2: %d\n", ClientSocket);
     /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
-    const int BUFFERSIZE = 256;
     char stringBuffer[BUFFERSIZE];
     int msgSize = 0;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -171,7 +169,8 @@ void HandleClientRequests(void* ClientSocketPtr)
         stringBuffer[msgSize + 1] = '\0';
         printf("%s", stringBuffer);
         fflush(stdout);
-        send(ClientSocket, (void *) stringBuffer, sizeof(stringBuffer), 0);
+
+        ParseClientMessage(stringBuffer, ClientSocket);
     }
     close(ClientSocket);    /* Close client socket */
     free(ClientSocketPtr);
@@ -180,8 +179,28 @@ void HandleClientRequests(void* ClientSocketPtr)
 
 
 //Parse message
-int ParseClientMessage(char* clientMessage)
+int ParseClientMessage(char* clientMessage, int ClientSocket)
 {
+    int i = 0;
+    char string[BUFFERSIZE]; //String to send back to client
+
+    if(strcmp(clientMessage, "<loadavg/>") == 0)
+    {
+        string[0] = '\0'; //Make sure string is empty
+        double loadavg[3];
+        getloadavg(loadavg, 3);
+
+        //Begin string format:
+        strcat(string, "<replyLoadAvg>");
+        for(i = 0; i < 3; i++)
+        {
+            char tempAvg[BUFFERSIZE];
+            sprintf(tempAvg, "%lf:", loadavg[i]);
+            strcat(string, tempAvg);
+        }
+        strcat(string, "</replyLoadAvg>");
+    }
+
 
     //TODO implement echo
     //Syntax <echo>string</echo>
@@ -194,6 +213,6 @@ int ParseClientMessage(char* clientMessage)
     //TODO implement error
     //Syntax if unknown message
     //Return <error>unknown format</error>
-
+    send(ClientSocket, (void *) string, sizeof(string), 0);
     return 0;
 }

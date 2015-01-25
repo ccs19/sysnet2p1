@@ -88,25 +88,25 @@ int main(int argc, char** argv)
     else
         printf ("Passed test 1.\n\n");
 
-//    if (!runTest (hostname, portNum, "test2", "test2ExpectedResponse"))
-//        printf ("Failed test 2.\n");
-//    else
-//        printf ("Passed test 2.\n\n");
-//
-//    if (!runTest (hostname, portNum, "test3", "test3ExpectedResponse"))
-//        printf ("Failed test 3.\n");
-//    else
-//        printf ("Passed test 3.\n\n");
-//
-//    if (!runTest (hostname, portNum, "test4", "test4ExpectedResponse"))
-//        printf ("Failed test 4.\n");
-//    else
-//        printf ("Passed test 4.\n\n");
-//
-//    if (!runTest (hostname, portNum, "test5", "test5ExpectedResponse"))
-//        printf ("Failed test 5.\n");
-//    else
-//        printf ("Passed test 5.\n");
+    if (!runTest (hostname, portNum, "<", "<error>unknown format</error>"))
+        printf ("Failed test 2.\n");
+    else
+        printf ("Passed test 2.\n\n");
+
+    if (!runTest (hostname, portNum, "<loadavg/>", NULL))
+        printf ("Failed test 3.\n");
+    else
+        printf ("Passed test 3.\n\n");
+
+    if (!runTest (hostname, portNum, "<echo>testststs     </echo>", "<reply>testststs     </reply>"))
+        printf ("Failed test 4.\n");
+    else
+        printf ("Passed test 4.\n\n");
+
+    if (!runTest (hostname, portNum, "<<loadavg/>", "<error>unknown format</error>"))
+        printf ("Failed test 5.\n");
+    else
+        printf ("Passed test 5.\n");
 
     exit(0);
 }

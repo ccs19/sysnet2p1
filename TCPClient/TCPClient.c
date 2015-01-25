@@ -95,8 +95,15 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 */
 int sendRequest(int sock, char * request, struct sockaddr_in * dest)
 {
-    send(sock, request, strlen(request), 0); //TODO add error checking
-    return 0;
+
+    if( (send(sock, request, strlen(request), 0) ) < 0) {
+        printf("Send failed\n");
+        return -1;
+    }
+    else {
+        printf("Sending %s\n", request);
+        return 0;
+    }
 }
 
 /*
@@ -112,10 +119,20 @@ int receiveResponse(int sock, char * response)
 {
     char buffer[BUFFERSIZE];
     bzero(buffer, BUFFERSIZE);
-    read(sock, buffer, BUFFERSIZE);//TODO add error checking for size
-    response[0] = '\0';
-    strcat(response, buffer); //Copy buffer into response
-    return 0;
+
+    int readReturn = read(sock,buffer,BUFFERSIZE);
+    if( readReturn < 0 || readReturn > BUFFERSIZE )
+    {
+        printf("Read failed\n");
+        return readReturn;
+    }
+    else
+    {
+        bzero(response, BUFFERSIZE);
+        strcat(response, buffer); //Copy buffer into response
+        return 0;
+    }
+
 }
 
 /*
@@ -138,8 +155,12 @@ void printResponse(char* response)
 */
 int closeSocket(int sock)
 {
-    int socketCloseError = close(sock);
-    if(socketCloseError < 0) perror("Error closing socket.");
-    return socketCloseError;
-    //return EXIT_SUCCESS
+    int closeSocketResponse = close(sock);
+    if(closeSocketResponse < 0)
+    {
+       printf("Failed to close socket\n");
+        return closeSocketResponse;
+    }
+    else
+        return 0;
 }

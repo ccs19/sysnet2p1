@@ -216,7 +216,7 @@ void HandleClientRequests(void* ClientSocketPtr)
 {
 
     //TODO: REMOVE DEBUG STATEMENTS
-    printf("Client connected!");
+    printf("Client connected!\n");
     /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
     int ClientSocket = *(int*)ClientSocketPtr;
     char stringBuffer[BUFFERSIZE];
@@ -290,8 +290,8 @@ void ParseClientMessage(char* clientMessage, int ClientSocket)
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     else //Else we have an invalid format
         strcat(string, "<error>unknown format</error>\0");
-
     send(ClientSocket, (void *) string, strlen(string), 0); //Send string back to client.
+    //TODO error checking here?
 }
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -314,7 +314,7 @@ int XMLParser(  const char* beginXml,
                 int tokenSize)
 {
     //~~~~~~~~~~~~~Local vars ~~~~~~~~~~~~~~~~~~~~~~~//
-    char tempString[BUFFERSIZE];
+    char tempString[strlen(clientMessage)];
     char *delimiter = NULL;
     int returnVal = 0;
     int i = 0;

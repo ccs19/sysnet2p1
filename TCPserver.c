@@ -70,7 +70,6 @@ int main(int argc, const char* argv[])
     @param  port           -- The port number to bind the listen socket
     @return                -- void
 
-
  */
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void OpenSocket(int port)
@@ -88,7 +87,6 @@ void OpenSocket(int port)
         herror("GetHostByName failed. Error: ");
         exit(1);
     }
-
     InitAddressStruct(port);
     BindSocketAndListen();
 }
@@ -216,6 +214,9 @@ void ExitOnError(char* errorMessage)
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void HandleClientRequests(void* ClientSocketPtr)
 {
+
+    //TODO: REMOVE DEBUG STATEMENTS
+    printf("Client connected!");
     /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
     int ClientSocket = *(int*)ClientSocketPtr;
     char stringBuffer[BUFFERSIZE];
@@ -228,7 +229,8 @@ void HandleClientRequests(void* ClientSocketPtr)
     }
     else //Else parse message and do something.
     {
-        stringBuffer[msgSize + 1] = '\0';
+        //stringBuffer[msgSize + 1] = '\0';
+        printf("Received message: %s\n", stringBuffer);
         ParseClientMessage(stringBuffer, ClientSocket);
     }
     close(ClientSocket);
@@ -273,7 +275,7 @@ void ParseClientMessage(char* clientMessage, int ClientSocket)
             sprintf(tempAvg, "%lf:", loadavg[i]);
             strcat(string, tempAvg);              //Append string to string we return to client
         }
-        strcat(string, "</replyLoadAvg>"); //End of string
+        strcat(string, "</replyLoadAvg>\0"); //End of string
     }
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
@@ -283,13 +285,13 @@ void ParseClientMessage(char* clientMessage, int ClientSocket)
        //Set return echo string
        strcat(string, "<reply>");
        strcat(string, token);
-       strcat(string, "</reply>");
+       strcat(string, "</reply>\0");
     }
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     else //Else we have an invalid format
-        strcat(string, "<error>unknown format</error>");
+        strcat(string, "<error>unknown format</error>\0");
 
-    send(ClientSocket, (void *) string, sizeof(string), 0); //Send string back to client.
+    send(ClientSocket, (void *) string, strlen(string), 0); //Send string back to client.
 }
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

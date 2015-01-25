@@ -290,6 +290,7 @@ void ParseClientMessage(char* clientMessage, int ClientSocket)
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     else //Else we have an invalid format
         strcat(string, "<error>unknown format</error>\0");
+    printf("Sending back %s\n", string);
     send(ClientSocket, (void *) string, strlen(string), 0); //Send string back to client.
     //TODO error checking here?
 }

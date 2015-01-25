@@ -83,7 +83,7 @@ int main(int argc, char** argv)
     // two strings for the last two parameters of runTest(). Note that if the expected parameter is NULL then anything
     // returned by the server will be accepted
 
-    if (!runTest (hostname, portNum, "test1", NULL))
+    if (!runTest (hostname, portNum, "test1", "<error>unknown format</error>"))
         printf ("Failed test 1.\n");
     else
         printf ("Passed test 1.\n\n");

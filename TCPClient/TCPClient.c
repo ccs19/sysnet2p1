@@ -110,9 +110,11 @@ int sendRequest(int sock, char * request, struct sockaddr_in * dest)
 */
 int receiveResponse(int sock, char * response)
 {
-    char buffer[BUFFERSIZE]; /* +1 so we can add null terminator */
-    buffer[0] = '\0';
-    read(sock, buffer, BUFFERSIZE);
+    char buffer[BUFFERSIZE];
+    bzero(buffer, BUFFERSIZE);
+    read(sock, buffer, BUFFERSIZE);//TODO add error checking for size
+    response[0] = '\0';
+    strcat(response, buffer); //Copy buffer into response
     return 0;
 }
 
@@ -124,7 +126,7 @@ int receiveResponse(int sock, char * response)
 */
 void printResponse(char* response)
 {
-    printf("%s", response);
+    printf("printResponse %s\n", response);
 }
 
 /*

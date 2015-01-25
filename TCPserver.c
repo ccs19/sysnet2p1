@@ -1,14 +1,17 @@
+/*
+ ============================================================================
+ Name        : TCPserver.c
+ Author      : Christopher Schneider, Brett Rowberry
+ Description : A TCP server that makes a connection and receives strings from a client
+ ============================================================================
+ */
+
+
+
 #include <stdio.h>
 #include <stdlib.h> //For getloadavg()
 #include <netdb.h> //For gethostbyname()
-
-//For socket(), listen(), bind(), send(), recv(), accept(), getsockname()
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <errno.h>
-
-#include <sys/types.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h> //for memset
@@ -18,7 +21,6 @@
 
 
 //Globals
-//TODO Get rid of globals
 int ServerSocket = 0;
 struct hostent *HostByName = NULL;
 struct sockaddr_in ServerAddress;
@@ -28,24 +30,26 @@ const int HostNameMaxSize = 256;
 const int MAXLISTENERS = 5;
 const int BUFFERSIZE = 256;
 
-//Steps
-//1. Create server socket
-//2. Display info about socket -- Host name, IP, Port
-//3. Wait for client connection
-//3.a Create new detached thread
-//3.b Interpret request
-//3.c Perform action depending on request. Refer to specifications.
-//4. Child thread close socket and terminate
 
 
-//THREAD
-pthread_t DetachedThread;
-pthread_attr_t ThreadAttribute;
 
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   main
+
+    Accepts a port number in argv[1] and opens a server on that port.
+
+    @param            argv  -- The argument in argv[1] represents the port number
+    @return           0
+
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 int main(int argc, const char* argv[])
 {
     if(argc != 2)
-        printf("Usage:\n%s <port to open>\n",argv[0]); //TODO check for negative port number entry
+        printf("Usage:\n%s <port to open>\n",argv[0]);
+    else if(atoi(argv[1]) <= 0)
+        printf("Invalid port number\n");
     else
     {
         OpenSocket(atoi(argv[1])); //Open socket with port in arg vector 1
@@ -55,12 +59,25 @@ int main(int argc, const char* argv[])
 }
 
 
-//ServerSocket of type int
+
+
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   OpenSocket
+
+    Opens the listening socket and resolves the host name.
+
+    @param  port           -- The port number to bind the listen socket
+    @return                -- void
+
+
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void OpenSocket(int port)
 {
     char hostname[HostNameMaxSize];
 
-    if( ( ServerSocket =  socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) ) <  0)  //If socket fails
+    if( ( ServerSocket =  socket(PF_INET, SOCK_STREAM, 0) ) <  0)  //If socket fails
         ExitOnError("Error creating socket");
 
     if(gethostname(hostname, sizeof(hostname)) < 0)                         //If getting hostname fails
@@ -77,6 +94,34 @@ void OpenSocket(int port)
 }
 
 
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   InitAddressStruct
+
+    Initializes the ServerAddress structure with the IP, port, and protocol type.
+
+    @param  port           --  Port number to open
+    @return                --  void
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+void InitAddressStruct(int port)
+{
+    memset((void*)&ServerAddress, '0', (size_t)sizeof(ServerAddress));
+    ServerAddress.sin_family = AF_INET;
+    memcpy( (void *)&ServerAddress.sin_addr, (void *)HostByName->h_addr, HostByName->h_length);
+    ServerAddress.sin_port = htons((ushort)port);
+}
+
+
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   DisplayInfo
+
+    Displays the connection info of the server.
+
+    @return           --    void
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void DisplayInfo()
 {
     int i = 0;
@@ -92,65 +137,83 @@ void DisplayInfo()
     fflush(stdout);
 }
 
-void CloseSocket()
-{
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   BindSocketAndListen
 
-}
+    Binds the server socket and listens on that socket
 
-void InitAddressStruct(int port)
-{
-    memset((void*)&ServerAddress, '0', (size_t)sizeof(ServerAddress));
-    ServerAddress.sin_family = AF_INET;
-    ServerAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    ServerAddress.sin_port = htons(port);
+    @return           --    void
 
-}
 
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void BindSocketAndListen()
 {
-    if( ( bind(ServerSocket, (struct sockaddr *) &ServerAddress, (socklen_t)sizeof(ServerAddress)) )  < 0)
+    if( ( bind( ServerSocket, (struct sockaddr *) &ServerAddress, sizeof(ServerAddress)) )  < 0)
         ExitOnError("Failed to bind socket"); //If binding of socket fails
-    if( (listen(ServerSocket, MAXLISTENERS)) < 0)//Maximum number of listeners.
+    if( (listen( ServerSocket, MAXLISTENERS)) < 0)
         ExitOnError("Failed to listen");
-
 }
 
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   AcceptConnections
+
+    Accepts the client connection and creates a new detached thread for the client.
+
+    @return           --    void
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void AcceptConnections()
 {
-
-
     /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
-    int* ClientSocket = NULL;
     struct sockaddr_in ClientAddress;
     unsigned int clientAddressSize = sizeof(ClientAddress);
-    pthread_t DetachedThread;
     pthread_attr_t ThreadAttribute;
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     DisplayInfo();
-    InitDetachedThread(&ThreadAttribute);
+    pthread_attr_init(&ThreadAttribute);
+    pthread_attr_setdetachstate(&ThreadAttribute, PTHREAD_CREATE_DETACHED);
     for(;;)
     {
-        ClientSocket = malloc(sizeof(int));
+        pthread_t DetachedThread;
+        int *ClientSocket = malloc(sizeof(int));
         if( (*ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddress, &clientAddressSize) ) < 0)
             ExitOnError("Error in accept()");
         pthread_create(&DetachedThread, &ThreadAttribute, (void*)HandleClientRequests, (void*)ClientSocket);
+
     }
 }
 
-void InitDetachedThread(pthread_attr_t* ThreadAttribute)
-{
-    pthread_attr_init(ThreadAttribute);
-    pthread_attr_setdetachstate(ThreadAttribute, PTHREAD_CREATE_DETACHED);
-}
 
 
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   ExitOnError
+
+    Prints a message to stdout and exits
+
+    @param  errorMessage           -- Error message to be printed
+    @return                        -- void
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void ExitOnError(char* errorMessage)
 {
     printf("%s\n", errorMessage);
     exit(1);
 }
 
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   HandleClientRequests
+
+    Depending on the string received from the client, we either print that it failed or parse
+    the message, then close the socket and free the thread.
+
+    @param  ClientSocketPtr -- A pointer to the client socket typecasted to a void*
+    @return           -- void
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void HandleClientRequests(void* ClientSocketPtr)
 {
     /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
@@ -158,7 +221,7 @@ void HandleClientRequests(void* ClientSocketPtr)
     char stringBuffer[BUFFERSIZE];
     int msgSize = 0;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
+    fflush(stdout);
     if( (msgSize = read(ClientSocket, stringBuffer, sizeof(stringBuffer))) < 0) //If read message fails
     {
         printf("Failed to read message from client\n");
@@ -168,31 +231,37 @@ void HandleClientRequests(void* ClientSocketPtr)
         stringBuffer[msgSize + 1] = '\0';
         ParseClientMessage(stringBuffer, ClientSocket);
     }
-    close(ClientSocket);    /* Close client socket */
+    close(ClientSocket);
     free(ClientSocketPtr);
     pthread_exit(NULL);
 }
 
 
-//Parse message
-int ParseClientMessage(char* clientMessage, int ClientSocket)
-{
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION:   ParseClientMessage
 
+    Handles the message for the client and sends a message back to the client
+
+    @param  clientMessage        -- Pointer to message received by client
+    @param  ClientSocket         -- The socket to the client
+    @return                      -- void
+
+
+ */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+void ParseClientMessage(char* clientMessage, int ClientSocket)
+{
     /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
     int i = 0;
     char string[BUFFERSIZE]; //String to send back to client
-    char token[BUFFERSIZE]; //Token to use for echo reply
-    string[0] = '\0'; //Make string empty
-    strcat(string, "<error>unknown format</error>"); //Set default string
-
-    int test = 0;
+    char token[BUFFERSIZE];  //Token to use for echo reply
+    string[0] = '\0';
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 
     /*~~~~~~~~~~~~~~~~~~~~~Load avg response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     if(strcmp(clientMessage, "<loadavg/>") == 0)
     {
-        string[0] = '\0';
         double loadavg[3];
         getloadavg(loadavg, 3); //Get load average and put in double array
 
@@ -201,47 +270,48 @@ int ParseClientMessage(char* clientMessage, int ClientSocket)
         for(i = 0; i < 3; i++)
         {
             char tempAvg[BUFFERSIZE];
-            sprintf(tempAvg, "%lf:", loadavg[i]); //Print double to string
+            sprintf(tempAvg, "%lf:", loadavg[i]);
             strcat(string, tempAvg);              //Append string to string we return to client
         }
         strcat(string, "</replyLoadAvg>"); //End of string
     }
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-    else {
-
-        test = (XMLParser("<echo>", "</echo>", clientMessage, token, sizeof(token)));
-        /*~~~~~~~~~~~~~~~~~~~~~Echo response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-        if (test == 1) {
-            //Set return echo string
-            string[0] = '\0';
-            strcat(string, "<reply>");
-            strcat(string, token);
-            strcat(string, "</reply>");
-        }
-        /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+    /*~~~~~~~~~~~~~~~~~~~~~Echo response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+    else if ((XMLParser("<echo>", "</echo>", clientMessage, token, sizeof(token))) == 1)
+    {
+       //Set return echo string
+       strcat(string, "<reply>");
+       strcat(string, token);
+       strcat(string, "</reply>");
     }
-    printf("Returning string to client: %s, test: %d \n", string, test);
-    fflush(stdout);
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+    else //Else we have an invalid format
+        strcat(string, "<error>unknown format</error>");
+
     send(ClientSocket, (void *) string, sizeof(string), 0); //Send string back to client.
-    return 0;
 }
 
-/*
-    begin           --      The expected beginning of an XML expression
-    end             --      The expected ending of an XML expression
-    token           --      The token extracted from the expression
-    clientMessage   --      Message to parse
-    length          --      Size of token
-    return          --      1 on success, 0 on failure, -1 if token is too large to fit
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*  FUNCTION: XMLParser
+
+    Parses an XML value and returns a token.
+
+    @param begin           --      The expected beginning of an XML expression
+    @param end             --      The expected ending of an XML expression
+    @param token           --      The token extracted from the expression
+    @param clientMessage   --      Message to parse
+    @param length          --      Size of token
+    @return                --      1 on success, 0 on failure, -1 if token is too large to fit
  */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 int XMLParser(  const char* beginXml,
                 const char* endXml,
                 char* clientMessage,
                 char* token,
                 int tokenSize)
 {
-    //~~~~~~~~~~~~~Comparison strings~~~~~~~~~~~~~~~~//
+    //~~~~~~~~~~~~~Local vars ~~~~~~~~~~~~~~~~~~~~~~~//
     char tempString[BUFFERSIZE];
     char *delimiter = NULL;
     int returnVal = 0;
@@ -250,16 +320,11 @@ int XMLParser(  const char* beginXml,
     int endXmlLength = strlen(endXml);
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-    token[0] = '\0'; //Empty string token
-
+    token[0] = '\0';
     memcpy(tempString, clientMessage, beginXmlLength); //Copy first part of clientMessage into temp for comparison.
     tempString[beginXmlLength] = '\0';
-    printf("Comparing %s and %s\n", tempString,  beginXml);
-    fflush(stdout);
-
     if(strcmp(tempString, beginXml) == 0 ) //If beginXml is found
     {
-        printf("They're the same!\n");
         memcpy(tempString, clientMessage, strlen(clientMessage)); //Copy entire clientMessage
         for(i = 1; i < strlen(clientMessage); i++) //Check for valid delimiter here
         {
@@ -269,19 +334,16 @@ int XMLParser(  const char* beginXml,
                 break;
             }
         }
-        delimiter[endXmlLength] = '\0';
-        printf("Comparing %s and %s\n", delimiter,  endXml);
-
-        if(strcmp(delimiter, endXml) != 0) //Invalid delimiter
+        delimiter[endXmlLength] = '\0';//Set end of delimiter to null
+        if(strcmp(delimiter, endXml) != 0) //If invalid delimiter
             returnVal = 0;
-        else //We have a valid delimiter!
+        else
         {
-            printf("They're the same!\n");
             returnVal = 1;//Set valid return
             char *tempToken = clientMessage+(strlen(beginXml)); //Set temporary token to end of starting delimiter
             strtok(tempToken, "<");
             if(strlen(tempToken) > tokenSize ) returnVal = -1;              //If token is too large, return -1
-            else if(strcmp(tempToken, endXml) == 0 ) token[0] = '\0';   //Else if empty token found
+            else if(strcmp(tempToken, endXml) == 0 ) token[0] = '\0';       //Else if empty token found
             else strcat(token, tempToken);                                  //Else put extracted token in variable
         }
     }

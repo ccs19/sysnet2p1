@@ -95,8 +95,9 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest)
 */
 int sendRequest(int sock, char * request, struct sockaddr_in * dest)
 {
-
-    if( (send(sock, request, strlen(request), 0) ) < 0) {
+    int length = strlen(request);
+    if(length == 0) length++;
+    if( (send(sock, request, length, 0) ) < 0) {
         printf("Send failed\n");
         return -1;
     }

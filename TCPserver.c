@@ -29,7 +29,8 @@ struct sockaddr_in ServerAddress;
 const int HostNameMaxSize = 256;
 const int MAXLISTENERS = 5;
 const int BUFFERSIZE = 256;
-
+const int PORT_UNDEFINED = 99999;
+const int MAX_PORT = 65535;
 
 
 
@@ -46,13 +47,21 @@ const int BUFFERSIZE = 256;
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 int main(int argc, const char* argv[])
 {
-    if(argc != 2)
-        printf("Usage:\n%s <port to open>\n",argv[0]);
-    else if(atoi(argv[1]) <= 0)
+    unsigned int port = PORT_UNDEFINED;
+
+    if(argc > 2)
+        printf("Usage:\n%s <optional:port to open>\n",argv[0]);
+    else if(argc == 1) //If no port specified
+        port = 0;
+    else if(atoi(argv[1]) <= 0 || atoi(argv[1]) > MAX_PORT) //Checking valid port bounds
         printf("Invalid port number\n");
-    else
+    else {
+        if (port == PORT_UNDEFINED) port = atoi(argv[1]); //If port specified at command line
+    }
+
+    if(port != PORT_UNDEFINED)
     {
-        OpenSocket(atoi(argv[1])); //Open socket with port in arg vector 1
+        OpenSocket(port); //Open socket with port in arg vector 1
         AcceptConnections();
     }
     return 0;
@@ -107,7 +116,7 @@ void InitAddressStruct(int port)
     memset((void*)&ServerAddress, '0', (size_t)sizeof(ServerAddress));
     ServerAddress.sin_family = AF_INET;
     memcpy( (void *)&ServerAddress.sin_addr, (void *)HostByName->h_addr, HostByName->h_length);
-    ServerAddress.sin_port = htons((ushort)port);
+    ServerAddress.sin_port = htons(port);
 }
 
 
@@ -124,6 +133,9 @@ void DisplayInfo()
 {
     int i = 0;
     struct in_addr ipAddress;
+    struct sockaddr_in sockIn;
+    int sockLen = sizeof(sockLen);
+    getsockname(ServerSocket, (struct sockaddr*)&sockIn, (socklen_t*)&sockLen );
     printf("Host Name: %s\n",HostByName->h_name);
     printf("IP:        ");
     while(HostByName->h_addr_list[i] != 0)
@@ -131,7 +143,7 @@ void DisplayInfo()
        ipAddress.s_addr = *(u_long*)HostByName->h_addr_list[i++];
         printf("%s\n", inet_ntoa(ipAddress));
     }
-    printf("Port:      %d\n", htons(ServerAddress.sin_port));
+    printf("Port:      %d\n", htons(sockIn.sin_port));
     fflush(stdout);
 }
 
@@ -177,6 +189,8 @@ void AcceptConnections()
     {
         pthread_t DetachedThread;
         int *ClientSocket = malloc(sizeof(int));
+        printf("Waiting for connection... ");
+        fflush(stdout);
         if( (*ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddress, &clientAddressSize) ) < 0)
             ExitOnError("Error in accept()");
         pthread_create(&DetachedThread, &ThreadAttribute, (void*)HandleClientRequests, (void*)ClientSocket);
@@ -258,18 +272,19 @@ void ParseClientMessage(char* clientMessage, int ClientSocket)
     char string[BUFFERSIZE]; //String to send back to client
     char token[BUFFERSIZE];  //Token to use for echo reply
     string[0] = '\0';
+    const int NUMLOADAVG = 3; //Number of load averages queries
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 
     /*~~~~~~~~~~~~~~~~~~~~~Load avg response~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     if(strcmp(clientMessage, "<loadavg/>") == 0)
     {
-        double loadavg[3];
-        getloadavg(loadavg, 3); //Get load average and put in double array
+        double loadavg[NUMLOADAVG];
+        getloadavg(loadavg, NUMLOADAVG); //Get load average and put in double array
 
         //Begin string format:
         strcat(string, "<replyLoadAvg>");
-        for(i = 0; i < 3; i++)
+        for(i = 0; i < NUMLOADAVG; i++)
         {
             char tempAvg[BUFFERSIZE];
             sprintf(tempAvg, "%lf:", loadavg[i]);

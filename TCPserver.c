@@ -180,22 +180,21 @@ void AcceptConnections()
     struct sockaddr_in ClientAddress;
     unsigned int clientAddressSize = sizeof(ClientAddress);
     pthread_attr_t ThreadAttribute;
-    int i = 0; //To prevent printing "Waiting for connection..." twice for some strange reason
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
     DisplayInfo();
     pthread_attr_init(&ThreadAttribute);
     pthread_attr_setdetachstate(&ThreadAttribute, PTHREAD_CREATE_DETACHED);
-    for(;;i++)
+    printf("Waiting for connection... ");
+    fflush(stdout);
+    for(;;)
     {
         pthread_t DetachedThread;
         int *ClientSocket = malloc(sizeof(int));
-        if(i != 1) printf("Waiting for connection... ");
-        fflush(stdout);
+
         if( (*ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddress, &clientAddressSize) ) < 0)
             ExitOnError("Error in accept()");
         pthread_create(&DetachedThread, &ThreadAttribute, (void*)HandleClientRequests, (void*)ClientSocket);
-
     }
 }
 
@@ -332,6 +331,7 @@ int XMLParser(  const char* beginXml,
     char *delimiter = NULL;
     int returnVal = 0;
     int i = 0;
+    int foundDelimiter = 0;
     int beginXmlLength = strlen(beginXml);
     int endXmlLength = strlen(endXml);
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
@@ -346,21 +346,24 @@ int XMLParser(  const char* beginXml,
         {
             if(tempString[i] == '<')
             {
-                delimiter = tempString+i; //Potential valid delimiter found. Point delimiter ptr to location.
+                delimiter = tempString+i;//Potential valid delimiter found. Point delimiter ptr to location.
+                foundDelimiter = 1;
                 break;
             }
         }
-        delimiter[endXmlLength] = '\0';//Set end of delimiter to null
-        if(strcmp(delimiter, endXml) != 0) //If invalid delimiter
-            returnVal = 0;
-        else
+        if(foundDelimiter)
         {
-            returnVal = 1;//Set valid return
-            char *tempToken = clientMessage+(strlen(beginXml)); //Set temporary token to end of starting delimiter
-            strtok(tempToken, "<");
-            if(strlen(tempToken) > tokenSize ) returnVal = -1;              //If token is too large, return -1
-            else if(strcmp(tempToken, endXml) == 0 ) token[0] = '\0';       //Else if empty token found
-            else strcat(token, tempToken);                                  //Else put extracted token in variable
+            delimiter[endXmlLength] = '\0';//Set end of delimiter to null
+            if (strcmp(delimiter, endXml) != 0) //If invalid delimiter
+                returnVal = 0;
+            else {
+                returnVal = 1;//Set valid return
+                char *tempToken = clientMessage + (strlen(beginXml)); //Set temporary token to end of starting delimiter
+                strtok(tempToken, "<");
+                if (strlen(tempToken) > tokenSize) returnVal = -1;              //If token is too large, return -1
+                else if (strcmp(tempToken, endXml) == 0) token[0] = '\0';       //Else if empty token found
+                else strcat(token, tempToken);                                  //Else put extracted token in variable
+            }
         }
     }
     return returnVal;

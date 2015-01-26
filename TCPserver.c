@@ -180,16 +180,17 @@ void AcceptConnections()
     struct sockaddr_in ClientAddress;
     unsigned int clientAddressSize = sizeof(ClientAddress);
     pthread_attr_t ThreadAttribute;
+    int i = 0; //To prevent printing "Waiting for connection..." twice for some strange reason
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
     DisplayInfo();
     pthread_attr_init(&ThreadAttribute);
     pthread_attr_setdetachstate(&ThreadAttribute, PTHREAD_CREATE_DETACHED);
-    for(;;)
+    for(;;i++)
     {
         pthread_t DetachedThread;
         int *ClientSocket = malloc(sizeof(int));
-        printf("Waiting for connection... ");
+        if(i != 1) printf("Waiting for connection... ");
         fflush(stdout);
         if( (*ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddress, &clientAddressSize) ) < 0)
             ExitOnError("Error in accept()");
@@ -228,9 +229,8 @@ void ExitOnError(char* errorMessage)
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void HandleClientRequests(void* ClientSocketPtr)
 {
-
-    //TODO: REMOVE DEBUG STATEMENTS
     printf("Client connected!\n");
+    fflush(stdout);
     /*~~~~~~~~~~~~~~~~~~~~~Local vars~~~~~~~~~~~~~~~~~~~~~*/
     int ClientSocket = *(int*)ClientSocketPtr;
     char stringBuffer[BUFFERSIZE];
@@ -261,8 +261,6 @@ void HandleClientRequests(void* ClientSocketPtr)
     @param  clientMessage        -- Pointer to message received by client
     @param  ClientSocket         -- The socket to the client
     @return                      -- void
-
-
  */
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void ParseClientMessage(char* clientMessage, int ClientSocket)
@@ -305,7 +303,7 @@ void ParseClientMessage(char* clientMessage, int ClientSocket)
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
     else //Else we have an invalid format
         strcat(string, "<error>unknown format</error>\0");
-    printf("Sending back %s\n", string);
+    printf("Sending back %s\n\n", string);
     if( (send(ClientSocket, (void *) string, strlen(string), 0)) < 0) //Send string back to client.
         printf("Failed to send\n");
 }

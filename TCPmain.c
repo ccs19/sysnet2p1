@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "TCPClient.h"
+#include "TCPclient.h"
 
 int runTest(char *hostname, int portNum, char *req, char *expctResp)
 {

@@ -1,3 +1,5 @@
+
+
 /*
  * TCPClient.h
  * Systems and Networks II
@@ -16,7 +18,7 @@
  *
  * return value - the socket identifier or a negative number indicating the error if a connection could not be established
  */
-int createSocket(char * serverName, int port, struct sockaddr_in * dest);
+int createSocket(char*, int, struct sockaddr_in*);
 
 /*
  * Sends a request for service to the server. This is an asynchronous call to the server,
@@ -28,7 +30,7 @@ int createSocket(char * serverName, int port, struct sockaddr_in * dest);
  *
  * return   - 0, if no error; otherwise, a negative number indicating the error
  */
-int sendRequest(int sock, char * request, struct sockaddr_in * dest);
+int sendRequest(int sock, char * request, struct sockaddr_in* dest);
 
 /*
  * Receives the server's response formatted as an XML text string.
